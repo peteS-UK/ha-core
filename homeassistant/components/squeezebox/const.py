@@ -27,3 +27,6 @@ STATUS_QUERY_MAC = "mac"
 STATUS_QUERY_UUID = "uuid"
 STATUS_QUERY_VERSION = "version"
 SQUEEZEBOX_SOURCE_STRINGS = ("source:", "wavin:", "spotify:")
+ATTR_DEVICE_ID = "device_id"
+ATTR_RETURN_ITEMS = "return_items"
+ATTR_SEARCH_STRING = "search_string"

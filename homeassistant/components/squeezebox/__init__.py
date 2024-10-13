@@ -37,8 +37,10 @@ from .const import (
     STATUS_QUERY_VERSION,
 )
 from .coordinator import LMSStatusDataUpdateCoordinator
+from .services import setup_services
 
 _LOGGER = logging.getLogger(__name__)
+
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
@@ -56,6 +58,12 @@ class SqueezeboxData:
 
 
 type SqueezeboxConfigEntry = ConfigEntry[SqueezeboxData]
+
+
+async def async_setup(hass: HomeAssistant, config: SqueezeboxConfigEntry) -> bool:
+    """Set up the Squeezebox component."""
+    setup_services(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: SqueezeboxConfigEntry) -> bool:
