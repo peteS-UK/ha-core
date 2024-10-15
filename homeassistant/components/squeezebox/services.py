@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TypeAlias
-
-import logging
 from dataclasses import dataclass
+import logging
 from typing import cast
 
+from pysqueezebox import Server
 import voluptuous as vol
+
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import ATTR_COMMAND
 from homeassistant.core import (
@@ -17,10 +17,8 @@ from homeassistant.core import (
     ServiceResponse,
     SupportsResponse,
 )
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
-from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers import device_registry as dr
-from pysqueezebox import Server
+from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import config_validation as cv, device_registry as dr
 
 # from . import SqueezeboxConfigEntry
 from .const import ATTR_DEVICE_ID, ATTR_RETURN_ITEMS, ATTR_SEARCH_STRING, DOMAIN
@@ -29,7 +27,7 @@ from .coordinator import LMSStatusDataUpdateCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 
-QueryResult: TypeAlias = "dict[str, int | str | QueryResult | list[QueryResult]]"
+type QueryResult = "dict[str, int | str | QueryResult | list[QueryResult]]"
 
 
 @dataclass
