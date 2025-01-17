@@ -30,6 +30,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import (
     config_validation as cv,
+    device_registry as dr,
     discovery_flow,
     entity_platform,
     entity_registry as er,
@@ -120,7 +121,7 @@ async def async_setup_entry(
     # Add media player entities when discovered
     async def _player_discovered(player: SqueezeBoxPlayerUpdateCoordinator) -> None:
         _LOGGER.debug("Setting up media_player entity for player %s", player)
-        async_add_entities([SqueezeBoxMediaPlayerEntity(player)])
+        async_add_entities([SqueezeBoxMediaPlayerEntity(hass, player)])
 
     entry.async_on_unload(
         async_dispatcher_connect(hass, SIGNAL_PLAYER_DISCOVERED, _player_discovered)
@@ -186,11 +187,13 @@ class SqueezeBoxMediaPlayerEntity(
 
     def __init__(
         self,
+        hass: HomeAssistant,
         coordinator: SqueezeBoxPlayerUpdateCoordinator,
     ) -> None:
         """Initialize the SqueezeBox device."""
         super().__init__(coordinator)
         player = coordinator.player
+        self._hass = hass
         self._player = player
         self._query_result: bool | dict = {}
         self._remove_dispatcher: Callable | None = None
@@ -206,14 +209,29 @@ class SqueezeBoxMediaPlayerEntity(
         ):
             _manufacturer = "Logitech"
 
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._attr_unique_id)},
-            name=player.name,
-            connections={(CONNECTION_NETWORK_MAC, self._attr_unique_id)},
-            via_device=(DOMAIN, coordinator.server_uuid),
-            model=player.model,
-            manufacturer=_manufacturer,
+        device_registry = dr.async_get(self._hass)
+        _lms_device = device_registry.async_get_device(
+            connections={(CONNECTION_NETWORK_MAC, self._attr_unique_id)}
         )
+
+        if _lms_device is not None and _lms_device.entry_type == "service":
+            # Player is running on the same physical device as the LMS, so don't add the mac
+            self._attr_device_info = DeviceInfo(
+                identifiers={(DOMAIN, self._attr_unique_id)},
+                name=player.name,
+                via_device=(DOMAIN, coordinator.server_uuid),
+                model=player.model,
+                manufacturer=_manufacturer,
+            )
+        else:
+            self._attr_device_info = DeviceInfo(
+                identifiers={(DOMAIN, self._attr_unique_id)},
+                name=player.name,
+                connections={(CONNECTION_NETWORK_MAC, self._attr_unique_id)},
+                via_device=(DOMAIN, coordinator.server_uuid),
+                model=player.model,
+                manufacturer=_manufacturer,
+            )
 
     @callback
     def _handle_coordinator_update(self) -> None:
