@@ -9,6 +9,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from pysqueezebox import Server, async_discover
+from pysqueezebox.player import Alarm
 import voluptuous as vol
 
 from homeassistant.components import media_source
@@ -51,6 +52,12 @@ from .browse_media import (
 from .const import (
     ATTR_ANNOUNCE_TIMEOUT,
     ATTR_ANNOUNCE_VOLUME,
+    ATTR_DAYS_OF_WEEK,
+    ATTR_ENABLED,
+    ATTR_REPEAT,
+    ATTR_TIME,
+    ATTR_URL,
+    ATTR_VOLUME,
     CONF_BROWSE_LIMIT,
     CONF_VOLUME_STEP,
     DEFAULT_BROWSE_LIMIT,
@@ -68,6 +75,7 @@ from .entity import SqueezeboxEntity
 if TYPE_CHECKING:
     from . import SqueezeboxConfigEntry
 
+SERVICE_ADD_ALARM = "add_alarm"
 SERVICE_CALL_METHOD = "call_method"
 SERVICE_CALL_QUERY = "call_query"
 
@@ -151,6 +159,18 @@ async def async_setup_entry(
             ),
         },
         "async_call_query",
+    )
+    platform.async_register_entity_service(
+        SERVICE_ADD_ALARM,
+        {
+            vol.Required(ATTR_TIME): cv.time,
+            vol.Optional(ATTR_DAYS_OF_WEEK): vol.All(cv.ensure_list, [cv.positive_int]),
+            vol.Optional(ATTR_ENABLED): cv.boolean,
+            vol.Optional(ATTR_REPEAT): cv.boolean,
+            vol.Optional(ATTR_VOLUME): cv.small_float,
+            vol.Optional(ATTR_URL): cv.string,
+        },
+        "async_add_alarm",
     )
 
     # Start server discovery task if not already running
@@ -653,3 +673,10 @@ class SqueezeBoxMediaPlayerEntity(SqueezeboxEntity, MediaPlayerEntity):
             return result
 
         return (None, None)
+
+    async def async_add_alarm(self, **kwargs: Any) -> None:
+        """Add an alarm to the player."""
+        alarm = Alarm(**kwargs)
+        time = alarm.pop("time")
+        await self._player.async_add_alarm(time, alarm)
+        await self.coordinator.async_refresh()
