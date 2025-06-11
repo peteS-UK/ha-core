@@ -18,7 +18,7 @@ from homeassistant.helpers.event import async_track_time_change
 
 from .const import ATTR_ALARM_ID, DOMAIN, SIGNAL_PLAYER_DISCOVERED
 from .coordinator import SqueezeBoxPlayerUpdateCoordinator
-from .entity import SqueezeboxEntity
+from .entity import SqueezeboxEntity, catch_action_error
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -145,11 +145,13 @@ class SqueezeBoxAlarmEntity(SqueezeboxEntity, SwitchEntity):
         """Return the state of the switch."""
         return cast(bool, self.alarm["enabled"])
 
+    @catch_action_error("alarm_turn_off")
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
         await self.coordinator.player.async_update_alarm(self._alarm_id, enabled=False)
         await self.coordinator.async_request_refresh()
 
+    @catch_action_error("alarm_turn_on")
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch."""
         await self.coordinator.player.async_update_alarm(self._alarm_id, enabled=True)
@@ -174,11 +176,13 @@ class SqueezeBoxAlarmsEnabledEntity(SqueezeboxEntity, SwitchEntity):
         """Return the state of the switch."""
         return cast(bool, self.coordinator.player.alarms_enabled)
 
+    @catch_action_error("alarm_disable")
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
         await self.coordinator.player.async_set_alarms_enabled(False)
         await self.coordinator.async_request_refresh()
 
+    @catch_action_error("alarm_enable")
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch."""
         await self.coordinator.player.async_set_alarms_enabled(True)

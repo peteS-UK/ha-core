@@ -14,7 +14,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from . import SqueezeboxConfigEntry
 from .const import SIGNAL_PLAYER_DISCOVERED
 from .coordinator import SqueezeBoxPlayerUpdateCoordinator
-from .entity import SqueezeboxEntity
+from .entity import SqueezeboxEntity, catch_action_error
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -158,6 +158,7 @@ class SqueezeboxButtonEntity(SqueezeboxEntity, ButtonEntity):
         """Return True if entity is available."""
         return self.coordinator.available and super().available
 
+    @catch_action_error("press_button")
     async def async_press(self) -> None:
         """Execute the button action."""
         await self._player.async_query("button", self.entity_description.press_action)

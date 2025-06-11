@@ -390,57 +390,68 @@ class SqueezeBoxMediaPlayerEntity(SqueezeboxEntity, MediaPlayerEntity):
         await self._player.async_set_power(False)
         await self.coordinator.async_refresh()
 
+    @catch_action_error("set_volume_level")
     async def async_set_volume_level(self, volume: float) -> None:
         """Set volume level, range 0..1."""
         volume_percent = str(int(volume * 100))
         await self._player.async_set_volume(volume_percent)
         await self.coordinator.async_refresh()
 
+    @catch_action_error("mute_volume")
     async def async_mute_volume(self, mute: bool) -> None:
         """Mute (true) or unmute (false) media player."""
         await self._player.async_set_muting(mute)
         await self.coordinator.async_refresh()
 
+    @catch_action_error("media_stop")
     async def async_media_stop(self) -> None:
         """Send stop command to media player."""
         await self._player.async_stop()
         await self.coordinator.async_refresh()
 
+    @catch_action_error("media_play_pause")
     async def async_media_play_pause(self) -> None:
         """Send pause command to media player."""
         await self._player.async_toggle_pause()
         await self.coordinator.async_refresh()
 
+    @catch_action_error("media_play")
     async def async_media_play(self) -> None:
         """Send play command to media player."""
         await self._player.async_play()
         await self.coordinator.async_refresh()
 
+    @catch_action_error("media_pause")
     async def async_media_pause(self) -> None:
         """Send pause command to media player."""
         await self._player.async_pause()
         await self.coordinator.async_refresh()
 
+    @catch_action_error("media_next_track")
     async def async_media_next_track(self) -> None:
         """Send next track command."""
         await self._player.async_index("+1")
         await self.coordinator.async_refresh()
 
+    @catch_action_error("media_previous_track")
     async def async_media_previous_track(self) -> None:
         """Send next track command."""
         await self._player.async_index("-1")
         await self.coordinator.async_refresh()
 
+    @catch_action_error("media_seek")
     async def async_media_seek(self, position: float) -> None:
         """Send seek command."""
         await self._player.async_time(position)
         await self.coordinator.async_refresh()
 
+    @catch_action_error("turn_on")
     async def async_turn_on(self) -> None:
         """Turn the media player on."""
         await self._player.async_set_power(True)
         await self.coordinator.async_refresh()
 
+    # @catch_action_error("play_media")
     async def async_play_media(
         self,
         media_type: MediaType | str,
@@ -549,6 +560,7 @@ class SqueezeBoxMediaPlayerEntity(SqueezeboxEntity, MediaPlayerEntity):
             await self._player.async_index(index)
         await self.coordinator.async_refresh()
 
+    # @catch_action_error("search_media")
     async def async_search_media(
         self,
         query: SearchMediaQuery,
@@ -617,6 +629,7 @@ class SqueezeBoxMediaPlayerEntity(SqueezeboxEntity, MediaPlayerEntity):
 
         return SearchMedia(result=result)
 
+    @catch_action_error("set_repeat")
     async def async_set_repeat(self, repeat: RepeatMode) -> None:
         """Set the repeat mode."""
         if repeat == RepeatMode.ALL:
@@ -629,17 +642,20 @@ class SqueezeBoxMediaPlayerEntity(SqueezeboxEntity, MediaPlayerEntity):
         await self._player.async_set_repeat(repeat_mode)
         await self.coordinator.async_refresh()
 
+    @catch_action_error("set_shuffle")
     async def async_set_shuffle(self, shuffle: bool) -> None:
         """Enable/disable shuffle mode."""
         shuffle_mode = "song" if shuffle else "none"
         await self._player.async_set_shuffle(shuffle_mode)
         await self.coordinator.async_refresh()
 
+    @catch_action_error("clear_playlist")
     async def async_clear_playlist(self) -> None:
         """Send the media player the command for clear playlist."""
         await self._player.async_clear_playlist()
         await self.coordinator.async_refresh()
 
+    @catch_action_error("call_method")
     async def async_call_method(
         self, command: str, parameters: list[str] | None = None
     ) -> None:
@@ -653,6 +669,7 @@ class SqueezeBoxMediaPlayerEntity(SqueezeboxEntity, MediaPlayerEntity):
             all_params.extend(parameters)
         await self._player.async_query(*all_params)
 
+    @catch_action_error("call_query")
     async def async_call_query(
         self, command: str, parameters: list[str] | None = None
     ) -> None:
@@ -668,6 +685,7 @@ class SqueezeBoxMediaPlayerEntity(SqueezeboxEntity, MediaPlayerEntity):
         _LOGGER.debug("call_query got result %s", self._query_result)
         self.async_write_ha_state()
 
+    # @catch_action_error("join_players")
     async def async_join_players(self, group_members: list[str]) -> None:
         """Add other Squeezebox players to this player's sync group.
 
@@ -696,11 +714,13 @@ class SqueezeBoxMediaPlayerEntity(SqueezeboxEntity, MediaPlayerEntity):
                     },
                 )
 
+    @catch_action_error("unjoin_players")
     async def async_unjoin_player(self) -> None:
         """Unsync this Squeezebox player."""
         await self._player.async_unsync()
         await self.coordinator.async_refresh()
 
+    # @catch_action_error("browse_media")
     async def async_browse_media(
         self,
         media_content_type: MediaType | str | None = None,
@@ -737,6 +757,7 @@ class SqueezeBoxMediaPlayerEntity(SqueezeboxEntity, MediaPlayerEntity):
             self._browse_data,
         )
 
+    @catch_action_error("get_browse_image")
     async def async_get_browse_image(
         self,
         media_content_type: MediaType | str,
