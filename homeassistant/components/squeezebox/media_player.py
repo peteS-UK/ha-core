@@ -65,7 +65,7 @@ from .const import (
     SQUEEZEBOX_SOURCE_STRINGS,
 )
 from .coordinator import SqueezeBoxPlayerUpdateCoordinator
-from .entity import SqueezeboxEntity
+from .entity import SqueezeboxEntity, catch_action_error
 
 if TYPE_CHECKING:
     from . import SqueezeboxConfigEntry
@@ -384,6 +384,7 @@ class SqueezeBoxMediaPlayerEntity(SqueezeboxEntity, MediaPlayerEntity):
         """Return the result from the call_query service."""
         return self._query_result
 
+    @catch_action_error("turn_off")
     async def async_turn_off(self) -> None:
         """Turn off media player."""
         await self._player.async_set_power(False)

@@ -1,5 +1,10 @@
 """Base class for Squeezebox Sensor entities."""
 
+from collections.abc import Awaitable, Callable, Coroutine
+from functools import wraps
+from typing import Any
+
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import (
     CONNECTION_NETWORK_MAC,
     DeviceInfo,
@@ -55,3 +60,29 @@ class LMSStatusEntity(CoordinatorEntity[LMSStatusDataUpdateCoordinator]):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, coordinator.data[STATUS_QUERY_UUID])},
         )
+
+
+type _FuncType[**_P, _R] = Callable[_P, Awaitable[_R]]
+type _ReturnFuncType[**_P, _R] = Callable[_P, Coroutine[Any, Any, _R]]
+
+
+def catch_action_error[**_P, _R](
+    action: str,
+) -> Callable[[_FuncType[_P, _R]], _ReturnFuncType[_P, _R]]:
+    """Return decorator that catches errors and raises HomeAssistantError."""
+
+    def decorator(func: _FuncType[_P, _R]) -> _ReturnFuncType[_P, _R]:
+        @wraps(func)
+        async def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            try:
+                return await func(*args, **kwargs)
+            except Exception as ex:
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN,
+                    translation_key="action_error",
+                    translation_placeholders={"action": action, "error": str(ex)},
+                ) from ex
+
+        return wrapper
+
+    return decorator

@@ -169,6 +169,9 @@
     "init_timeout": {
       "message": "Timeout connecting to LMS {host}."
     },
+    "action_error": {
+      "message": "Unable to {action}: {error}"
+    },
     "init_auth_failed": {
       "message": "Authentication failed with {host}."
     },
