@@ -15,6 +15,7 @@ from homeassistant.components.squeezebox.const import (
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 
 from tests.common import MockConfigEntry
@@ -427,3 +428,34 @@ async def test_dhcp_discovery_existing_player(hass: HomeAssistant) -> None:
             ),
         )
         assert result["type"] is FlowResultType.ABORT
+
+
+async def test_dhcp_discovery_existing_player_new(
+    hass: HomeAssistant,
+    entity_registry: er.EntityRegistry,
+    config_entry: MockConfigEntry,  # Using your existing fixture from conftest.py
+) -> None:
+    """Test DHCP discovery is aborted for an existing player entity."""
+
+    entity_registry.async_get_or_create(
+        domain="media_player",
+        platform=DOMAIN,
+        unique_id="aabbccddeeff",
+        config_entry=config_entry,
+    )
+
+    # Now, trigger the DHCP discovery flow for the same device
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_DHCP},
+        data=DhcpServiceInfo(
+            ip="1.1.1.1",
+            macaddress="aabbccddeeff",
+            hostname="any",
+        ),
+    )
+
+    # The discovery logic should find the entity we created and abort the flow
+    assert result is not None
+    assert result["type"] == FlowResultType.ABORT
+    # assert result["reason"] == "already_configured"
