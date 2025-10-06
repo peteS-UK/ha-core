@@ -27,11 +27,15 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
 )
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 
 from .const import (
     CONF_BROWSE_LIMIT,
+    CONF_FLOW_TYPE,
     CONF_HTTPS,
     CONF_VOLUME_STEP,
     DEFAULT_BROWSE_LIMIT,
@@ -43,6 +47,20 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 TIMEOUT = 5
+
+FLOW_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_FLOW_TYPE): SelectSelector(
+            SelectSelectorConfig(
+                mode=SelectSelectorMode.LIST,
+                options=[
+                    "Discover",
+                    "Manual",
+                ],
+            )
+        ),
+    }
+)
 
 
 def _base_schema(
@@ -166,23 +184,28 @@ class SqueezeboxConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle a flow initialized by the user."""
         errors = {}
-        if user_input and CONF_HOST in user_input:
+        if user_input and user_input.get(CONF_FLOW_TYPE) == "Discover":
+            # discover servers
+            try:
+                async with asyncio.timeout(TIMEOUT):
+                    await self._discover()
+                return await self.async_step_edit()
+            except TimeoutError:
+                errors["base"] = "no_server_found"
+        if user_input and user_input.get(CONF_FLOW_TYPE) == "Manual":
             # update with host provided by user
             self.data_schema = _base_schema(user_input)
             return await self.async_step_edit()
 
-        # no host specified, see if we can discover an unconfigured LMS server
-        try:
-            async with asyncio.timeout(TIMEOUT):
-                await self._discover()
-            return await self.async_step_edit()
-        except TimeoutError:
-            errors["base"] = "no_server_found"
-
         # display the form
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema({vol.Optional(CONF_HOST): str}),
+            data_schema=self.add_suggested_values_to_schema(
+                FLOW_SCHEMA,
+                {
+                    CONF_FLOW_TYPE: "Manual" if errors else "Discover",
+                },
+            ),
             errors=errors,
         )
 
